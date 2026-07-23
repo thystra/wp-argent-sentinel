@@ -4,9 +4,12 @@ namespace ArgentSentinel\WordPress\Diagnostics;
 
 use ArgentSentinel\WordPress\Database\Schema;
 use ArgentSentinel\WordPress\Events\QueueRepository;
+use ArgentSentinel\WordPress\Export\CronExporter;
+use ArgentSentinel\WordPress\Plugin;
 use ArgentSentinel\WordPress\Settings\Settings;
 
 final class Diagnostics {
+
 	/** @var QueueRepository */
 	private $queue;
 
@@ -19,7 +22,7 @@ final class Diagnostics {
 	}
 
 	/**
-	 * Returns non-secret operational state for a future admin screen and CLI.
+	 * Returns non-secret operational state for WP-CLI and a future admin screen.
 	 *
 	 * @return array<string,mixed>
 	 */
@@ -29,6 +32,7 @@ final class Diagnostics {
 		return array_merge(
 			$this->queue->diagnostics(),
 			array(
+				'plugin_version'          => Plugin::VERSION,
 				'expected_schema_version' => Schema::VERSION,
 				'installed_schema_version' => (int) get_option( Schema::VERSION_OPTION, 0 ),
 				'site_id'                 => $this->settings->siteId(),
@@ -37,7 +41,18 @@ final class Diagnostics {
 				'drop_directory'          => $drop_directory,
 				'drop_directory_exists'   => is_dir( $drop_directory ),
 				'drop_directory_writable' => is_dir( $drop_directory ) && is_writable( $drop_directory ),
+				'next_export_at_utc'       => $this->nextScheduledUtc( CronExporter::EXPORT_HOOK ),
+				'next_prune_at_utc'        => $this->nextScheduledUtc( CronExporter::PRUNE_HOOK ),
 			)
 		);
+	}
+
+	private function nextScheduledUtc( string $hook ): ?string {
+		if ( ! function_exists( 'wp_next_scheduled' ) ) {
+			return null;
+		}
+
+		$timestamp = wp_next_scheduled( $hook );
+		return false === $timestamp ? null : gmdate( 'c', (int) $timestamp );
 	}
 }

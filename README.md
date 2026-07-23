@@ -7,7 +7,7 @@ batches for a separate host-level collector.
 
 ## Current status
 
-Version `0.1.0` is the first Phase 1 foundation increment. It currently:
+Version `0.2.0` adds the export and host-collector bridge while retaining the Phase 1 event capture. It currently:
 
 - creates the append-only `{$wpdb->prefix}argent_sentinel_events` queue;
 - generates UUIDv4 event identifiers and UTC timestamps;
@@ -27,6 +27,18 @@ addresses, suppress mail, clean stale users, add cron jobs, expose settings in
 wp-admin, or provide WP-CLI commands. It is development code, not a complete
 production deployment. Do not leave it collecting high-volume events
 indefinitely until the export and retention phases are implemented.
+
+## Version 0.2.0 batch export
+
+Queued rows are exported in deterministic ID order to a size-bounded, versioned JSON envelope. The file is written under a hidden temporary name in the configured drop directory, flushed, synchronized when supported, and atomically renamed before the queue is marked exported. A crash between publication and the database update can safely produce a duplicate because the host collector deduplicates both `batch_uuid` and `event_uuid`.
+
+The plugin schedules one export batch per minute and exported-row retention hourly. The commands are:
+
+    wp argent-sentinel status --format=json
+    wp argent-sentinel export --format=json
+    wp argent-sentinel prune --limit=1000 --format=json
+
+See `docs/export-batches.md` for the batch schema and filesystem permissions.
 
 ## Security-system boundary
 
@@ -258,8 +270,8 @@ Push an annotated `v<major>.<minor>.<patch>` tag whose version matches both the
 main plugin header and the `Stable tag` in `readme.txt`:
 
 ```sh
-git tag -a v0.1.0 -m "Argent Sentinel WordPress Connector v0.1.0"
-git push origin v0.1.0
+git tag -a v0.2.0 -m "Argent Sentinel WordPress Connector v0.2.0"
+git push origin v0.2.0
 ```
 
 The tag workflow runs the dependency-free tests and PHP syntax checks on PHP

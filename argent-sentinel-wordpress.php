@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Argent Sentinel WordPress Connector
  * Description: Queues privacy-conscious WordPress security events for Argent Sentinel.
- * Version: 0.1.1
+ * Version: 0.2.0
  * Requires at least: 6.5
  * Requires PHP: 7.4
  * Author: Argent Sentinel
