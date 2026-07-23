@@ -12,7 +12,7 @@ use ArgentSentinel\WordPress\Privacy\EmailIdentity;
 use ArgentSentinel\WordPress\Settings\Settings;
 
 final class Plugin {
-	public const VERSION = '0.1.0';
+	public const VERSION = '0.1.1';
 
 	/** @var self|null */
 	private static $instance;
