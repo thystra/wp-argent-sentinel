@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<ruleset name="Argent Sentinel WordPress Connector">
+	<description>WordPress and PHP compatibility checks for the connector.</description>
+
+	<file>argent-sentinel-wordpress.php</file>
+	<file>src</file>
+	<file>tests</file>
+	<file>uninstall.php</file>
+
+	<exclude-pattern>vendor/*</exclude-pattern>
+
+	<arg name="basepath" value="."/>
+	<arg name="colors"/>
+	<arg value="sp"/>
+
+	<rule ref="WordPress"/>
+	<rule ref="WordPress-Docs"/>
+	<rule ref="PHPCompatibilityWP"/>
+
+	<config name="testVersion" value="7.4-"/>
+	<config name="minimum_supported_wp_version" value="6.5"/>
+</ruleset>
