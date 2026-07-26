@@ -21,7 +21,7 @@ use ArgentSentinel\WordPress\Privacy\EmailIdentity;
 use ArgentSentinel\WordPress\Settings\Settings;
 
 final class Plugin {
-	public const VERSION = '0.2.4';
+	public const VERSION = '0.2.5';
 
 	/** @var self|null */
 	private static $instance;

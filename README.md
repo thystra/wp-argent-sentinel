@@ -52,3 +52,11 @@ intentionally excludes `/usr/sbin`. The latter is expected for a least-
 privilege web process: the copied command runs the helper as root, so the
 plugin no longer reports it as missing or recommends adding `/usr/sbin` to
 PHP's filesystem access.
+
+## Version 0.2.5 unrestricted PHP-FPM pools
+
+Version 0.2.5 reports a disabled effective `open_basedir` as a security-
+hardening issue for the expected per-user PHP-FPM pool model. The connector
+continues to show filesystem and export health separately, but its overall
+status becomes Needs attention and Site Health returns a recommended action.
+The page labels an empty value as `disabled`, not `unknown`.

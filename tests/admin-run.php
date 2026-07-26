@@ -57,7 +57,7 @@ namespace ArgentSentinel\WordPress\Diagnostics {
 			$this->status = array(
 				'overall_status' => 'ready',
 				'issues' => '',
-				'plugin_version' => '0.2.4',
+				'plugin_version' => '0.2.5',
 				'expected_schema_version' => 1,
 				'installed_schema_version' => 1,
 				'site_id' => 'wolfandraven-blog',
@@ -67,6 +67,7 @@ namespace ArgentSentinel\WordPress\Diagnostics {
 				'php_process_user' => 'wolfandraven',
 				'open_basedir' => '/srv:/tmp:/var/lib/argent-sentinel/drop/wordpress/wolfandraven-blog/incoming',
 				'open_basedir_enabled' => true,
+				'open_basedir_security_status' => 'restricted',
 				'open_basedir_allows_drop' => true,
 				'open_basedir_required_entry' => '/var/lib/argent-sentinel/drop/wordpress/wolfandraven-blog/incoming',
 				'open_basedir_suggested_value' => '/srv:/tmp:/var/lib/argent-sentinel/drop/wordpress/wolfandraven-blog/incoming',
@@ -186,6 +187,20 @@ namespace {
 	$diagnostics->status['drop_directory_writable'] = false;
 	$assert( 'critical' === $health->testDropDirectory()['status'], 'Unwritable drop directory returns critical.' );
 
+	$diagnostics->status['open_basedir'] = '';
+	$diagnostics->status['open_basedir_enabled'] = false;
+	$diagnostics->status['open_basedir_security_status'] = 'unrestricted';
+	$diagnostics->status['open_basedir_allows_drop'] = true;
+	ob_start();
+	$page->render();
+	$unrestricted_html = (string) ob_get_clean();
+	$assert( false !== strpos( $unrestricted_html, 'PHP open_basedir is disabled' ), 'Disabled open_basedir warning is rendered.' );
+	$assert( false !== strpos( $unrestricted_html, '>disabled</code>' ), 'Empty open_basedir is rendered as disabled.' );
+	$assert( 'recommended' === $health->testOpenBasedir()['status'], 'Disabled open_basedir returns recommended.' );
+
+	$diagnostics->status['open_basedir'] = '/srv:/tmp';
+	$diagnostics->status['open_basedir_enabled'] = true;
+	$diagnostics->status['open_basedir_security_status'] = 'restricted';
 	$diagnostics->status['open_basedir_allows_drop'] = false;
 	$assert( 'critical' === $health->testOpenBasedir()['status'], 'Blocked open_basedir returns critical.' );
 

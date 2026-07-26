@@ -52,6 +52,9 @@ final class Diagnostics {
 		if ( '' === $this->settings->hmacSecret() ) {
 			$issues[] = 'The HMAC secret is missing or too short.';
 		}
+		if ( ! $open_basedir_enabled ) {
+			$issues[] = 'PHP open_basedir is disabled for this per-site PHP-FPM pool.';
+		}
 		if ( $blocked_by_open_basedir ) {
 			$issues[] = 'PHP open_basedir does not permit access to the local drop directory.';
 		} elseif ( ! $exists ) {

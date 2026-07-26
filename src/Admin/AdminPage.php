@@ -267,6 +267,18 @@ final class AdminPage {
 					</p>
 				</div>
 			<?php endif; ?>
+			<?php if ( empty( $status['open_basedir_enabled'] ) ) : ?>
+				<div class="notice notice-warning inline">
+					<p><strong>Security hardening recommended: PHP open_basedir is disabled for this per-site pool.</strong></p>
+					<p>
+						The connector can operate, but the PHP worker has broader filesystem
+						reach than intended by the per-user pool model. Add a reviewed
+						pool-level <code>php_admin_value[open_basedir]</code>, including:
+						<code><?php echo esc_html( (string) $status['open_basedir_required_entry'] ); ?></code>
+					</p>
+					<p><code>open_basedir</code> is defense in depth and does not replace Unix permissions, service isolation, or timely patching.</p>
+				</div>
+			<?php endif; ?>
 			<?php if ( ! empty( $status['open_basedir_enabled'] ) && empty( $status['open_basedir_allows_drop'] ) ) : ?>
 				<div class="notice notice-error inline">
 					<p><strong>PHP-FPM open_basedir blocks the configured drop directory.</strong></p>
@@ -309,6 +321,7 @@ final class AdminPage {
 						'php_process_user'                => 'PHP process user',
 						'open_basedir'                    => 'Effective open_basedir',
 						'open_basedir_enabled'            => 'open_basedir enabled',
+						'open_basedir_security_status'    => 'open_basedir security status',
 						'open_basedir_allows_drop'        => 'open_basedir permits drop',
 						'open_basedir_required_entry'     => 'Required open_basedir entry',
 						'drop_directory_access_state'     => 'Drop access state',
@@ -331,7 +344,9 @@ final class AdminPage {
 					) as $key => $label
 				) :
 					$value = $status[ $key ] ?? null;
-					if ( is_bool( $value ) ) {
+					if ( 'open_basedir' === $key && ( null === $value || '' === $value ) ) {
+						$value = 'disabled';
+					} elseif ( is_bool( $value ) ) {
 						$value = $value ? 'yes' : 'no';
 					} elseif ( null === $value || '' === $value ) {
 						$value = 'unknown';

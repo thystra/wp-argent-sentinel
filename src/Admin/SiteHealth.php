@@ -113,10 +113,14 @@ final class SiteHealth {
 	 */
 	public function testOpenBasedir(): array {
 		$status = $this->diagnostics->snapshot();
-		if (
-			! empty( $status['open_basedir_enabled'] )
-			&& empty( $status['open_basedir_allows_drop'] )
-		) {
+		if ( empty( $status['open_basedir_enabled'] ) ) {
+			return $this->result(
+				'recommended',
+				'PHP open_basedir is disabled for this per-site pool',
+				'Add a reviewed pool-level open_basedir restriction. This is defense in depth and should complement Unix permissions and service isolation.'
+			);
+		}
+		if ( empty( $status['open_basedir_allows_drop'] ) ) {
 			return $this->result(
 				'critical',
 				'PHP open_basedir blocks Argent Sentinel',
