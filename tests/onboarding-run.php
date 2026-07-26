@@ -135,6 +135,8 @@ namespace {
 	$assert( false !== strpos( $command_text, 'example-fpm' ), 'Onboarding command contains PHP user.' );
 	$assert( false !== strpos( $command_text, '--open-basedir-mode prompt' ), 'Onboarding command prompts for open_basedir review.' );
 	$assert( '/usr/sbin/argent-sentinel-onboard-wordpress' === $builder->candidatePaths()[0], 'Packaged onboarding helper is primary.' );
+	$assert( CommandBuilder::HELPER_UNVERIFIABLE_BASEDIR === $builder->helperState( '/srv/example:/tmp' ), 'A helper outside open_basedir is unverifiable, not missing.' );
+	$assert( null === $builder->helperExists( '/srv/example:/tmp' ), 'Unverifiable helper existence is represented as null.' );
 	$assert( false === strpos( $command_text, 'argent_sentinel_hmac_secret' ), 'Onboarding command does not expose HMAC secret.' );
 
 	$command = new Command(

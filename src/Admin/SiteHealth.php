@@ -34,6 +34,10 @@ final class SiteHealth {
 			'label' => 'Argent Sentinel PHP open_basedir',
 			'test'  => array( $this, 'testOpenBasedir' ),
 		);
+		$tests['direct']['argent_sentinel_onboarding_helper'] = array(
+			'label' => 'Argent Sentinel host onboarding helper',
+			'test'  => array( $this, 'testOnboardingHelper' ),
+		);
 		$tests['direct']['argent_sentinel_export_schedule'] = array(
 			'label' => 'Argent Sentinel exporter schedule',
 			'test'  => array( $this, 'testSchedule' ),
@@ -130,6 +134,36 @@ final class SiteHealth {
 	/**
 	 * @return array<string,mixed>
 	 */
+	public function testOnboardingHelper(): array {
+		$status = $this->diagnostics->snapshot();
+		$state  = (string) ( $status['onboarding_helper_state'] ?? 'missing' );
+
+		if ( 'missing' === $state ) {
+			return $this->result(
+				'recommended',
+				'The Argent Sentinel host helper is missing',
+				'Install the Argent Sentinel agent/server package before running the generated provisioning command.'
+			);
+		}
+
+		if ( 'unverifiable_open_basedir' === $state ) {
+			return $this->result(
+				'good',
+				'The host helper is intentionally outside PHP-FPM access',
+				'WordPress cannot stat /usr/sbin through open_basedir. This does not block the root-side provisioning command and does not require adding /usr/sbin to PHP access.'
+			);
+		}
+
+		return $this->result(
+			'good',
+			'The Argent Sentinel host helper is available',
+			'The helper path is visible and executable in this PHP context.'
+		);
+	}
+
+	/**
+	 * @return array<string,mixed>
+	 */
 	public function testSchedule(): array {
 		$status = $this->diagnostics->snapshot();
 		if ( empty( $status['next_export_at_utc'] ) ) {
@@ -218,6 +252,7 @@ final class SiteHealth {
 				'php_process_user' => array( 'label' => 'PHP process user', 'value' => (string) $status['php_process_user'] ),
 				'open_basedir' => array( 'label' => 'Effective open_basedir', 'value' => (string) $status['open_basedir'] ),
 				'open_basedir_allows_drop' => array( 'label' => 'open_basedir permits drop', 'value' => ! empty( $status['open_basedir_allows_drop'] ) ? 'yes' : 'no' ),
+				'onboarding_helper_state' => array( 'label' => 'Onboarding helper status', 'value' => (string) ( $status['onboarding_helper_state'] ?? 'unknown' ) ),
 				'queued_count' => array( 'label' => 'Queued events', 'value' => (string) $status['queued_count'] ),
 				'last_exported_at' => array( 'label' => 'Last export UTC', 'value' => (string) ( $status['last_exported_at'] ?? 'none' ) ),
 				'next_export_at' => array( 'label' => 'Next export UTC', 'value' => (string) ( $status['next_export_at_utc'] ?? 'none' ) ),

@@ -40,6 +40,10 @@ final class Diagnostics {
 		$next_prune     = $this->nextScheduledUtc( CronExporter::PRUNE_HOOK );
 		$schema         = (int) get_option( Schema::VERSION_OPTION, 0 );
 		$builder        = new CommandBuilder( $this->settings );
+		$helper_state   = $builder->helperState( $open_basedir );
+		$helper_exists  = CommandBuilder::HELPER_AVAILABLE === $helper_state
+			? true
+			: ( CommandBuilder::HELPER_MISSING === $helper_state ? false : null );
 		$issues         = array();
 
 		if ( Schema::VERSION !== $schema ) {
@@ -97,7 +101,9 @@ final class Diagnostics {
 				'next_export_at_utc'               => $next_export,
 				'next_prune_at_utc'                => $next_prune,
 				'onboarding_helper'                => $builder->helperPath(),
-				'onboarding_helper_exists'         => $builder->helperExists(),
+				'onboarding_helper_state'          => $helper_state,
+				'onboarding_helper_exists'         => $helper_exists,
+				'onboarding_helper_verifiable'     => CommandBuilder::HELPER_UNVERIFIABLE_BASEDIR !== $helper_state,
 				'onboarding_command'               => $builder->command(),
 				'central_delivery_managed_by_agent' => true,
 				'central_service_name'             => 'sentinel.argentwolf.org',

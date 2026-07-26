@@ -247,13 +247,23 @@ final class AdminPage {
 			</form>
 
 			<h2>Host provisioning command</h2>
-			<?php if ( empty( $status['onboarding_helper_exists'] ) ) : ?>
+			<?php if ( 'missing' === ( $status['onboarding_helper_state'] ?? '' ) ) : ?>
 				<div class="notice notice-warning inline">
 					<p>
 						The host onboarding helper was not found at
 						<code><?php echo esc_html( (string) $status['onboarding_helper'] ); ?></code>.
 						Install the Argent Sentinel agent/server tooling or define
 						<code>ARGENT_SENTINEL_ONBOARDING_HELPER</code> with its absolute path.
+					</p>
+				</div>
+			<?php elseif ( 'unverifiable_open_basedir' === ( $status['onboarding_helper_state'] ?? '' ) ) : ?>
+				<div class="notice notice-info inline">
+					<p>
+						<strong>The helper is outside PHP-FPM's filesystem sandbox and cannot be verified from WordPress.</strong>
+						This is expected when <code>/usr/sbin</code> is excluded from
+						<code>open_basedir</code>. The helper runs as root from the copied
+						command; do not add <code>/usr/sbin</code> to PHP's allowed paths
+						solely for this status check.
 					</p>
 				</div>
 			<?php endif; ?>
@@ -315,6 +325,8 @@ final class AdminPage {
 						'next_export_at_utc'               => 'Next export UTC',
 						'next_prune_at_utc'                => 'Next prune UTC',
 						'onboarding_helper'                => 'Onboarding helper',
+						'onboarding_helper_state'          => 'Onboarding helper status',
+						'onboarding_helper_verifiable'     => 'Helper visible to PHP-FPM',
 						'onboarding_helper_exists'         => 'Onboarding helper executable',
 					) as $key => $label
 				) :

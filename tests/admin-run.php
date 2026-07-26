@@ -45,7 +45,7 @@ namespace ArgentSentinel\WordPress\Onboarding {
 	final class CommandBuilder {
 		public function command(): string { return 'sudo /usr/sbin/argent-sentinel-onboard-wordpress --site-id wolfandraven-blog'; }
 		public function helperPath(): string { return '/usr/sbin/argent-sentinel-onboard-wordpress'; }
-		public function helperExists(): bool { return true; }
+		public function helperExists(): ?bool { return true; }
 	}
 }
 
@@ -57,7 +57,7 @@ namespace ArgentSentinel\WordPress\Diagnostics {
 			$this->status = array(
 				'overall_status' => 'ready',
 				'issues' => '',
-				'plugin_version' => '0.2.3',
+				'plugin_version' => '0.2.4',
 				'expected_schema_version' => 1,
 				'installed_schema_version' => 1,
 				'site_id' => 'wolfandraven-blog',
@@ -84,6 +84,8 @@ namespace ArgentSentinel\WordPress\Diagnostics {
 				'next_export_at_utc' => '2026-07-26T00:00:00+00:00',
 				'next_prune_at_utc' => '2026-07-26T01:00:00+00:00',
 				'onboarding_helper' => '/usr/sbin/argent-sentinel-onboard-wordpress',
+				'onboarding_helper_state' => 'available',
+				'onboarding_helper_verifiable' => true,
 				'onboarding_helper_exists' => true,
 				'queued_count' => 3,
 				'oldest_queued_at' => '2026-07-25 23:00:00',
@@ -148,6 +150,27 @@ namespace {
 	$assert( false !== strpos( $html, 'Operational diagnostics' ), 'Detailed diagnostics are rendered.' );
 	$assert( false === strpos( $html, str_repeat( 'a', 64 ) ), 'No HMAC secret is rendered.' );
 
+	$diagnostics->status['onboarding_helper_state'] = 'unverifiable_open_basedir';
+	$diagnostics->status['onboarding_helper_verifiable'] = false;
+	$diagnostics->status['onboarding_helper_exists'] = null;
+	ob_start();
+	$page->render();
+	$restricted_html = (string) ob_get_clean();
+	$assert( false !== strpos( $restricted_html, "outside PHP-FPM's filesystem sandbox" ), 'Restricted helper visibility is explained.' );
+	$assert( false === strpos( $restricted_html, 'host onboarding helper was not found' ), 'Restricted helper is not reported missing.' );
+
+	$diagnostics->status['onboarding_helper_state'] = 'missing';
+	$diagnostics->status['onboarding_helper_verifiable'] = true;
+	$diagnostics->status['onboarding_helper_exists'] = false;
+	ob_start();
+	$page->render();
+	$missing_html = (string) ob_get_clean();
+	$assert( false !== strpos( $missing_html, 'host onboarding helper was not found' ), 'A verifiably absent helper is reported missing.' );
+
+	$diagnostics->status['onboarding_helper_state'] = 'unverifiable_open_basedir';
+	$diagnostics->status['onboarding_helper_verifiable'] = false;
+	$diagnostics->status['onboarding_helper_exists'] = null;
+
 	$health = new SiteHealth( $diagnostics );
 	$health->register();
 	$assert( isset( $GLOBALS['argent_filters']['site_status_tests'] ), 'Site Health tests hook is registered.' );
@@ -155,7 +178,9 @@ namespace {
 	$assert( isset( $tests['direct']['argent_sentinel_configuration'] ), 'Configuration health test is available.' );
 	$assert( isset( $tests['direct']['argent_sentinel_drop_directory'] ), 'Drop-directory health test is available.' );
 	$assert( isset( $tests['direct']['argent_sentinel_open_basedir'] ), 'open_basedir health test is available.' );
+	$assert( isset( $tests['direct']['argent_sentinel_onboarding_helper'] ), 'Onboarding-helper health test is available.' );
 	$assert( 'good' === $health->testOpenBasedir()['status'], 'Allowed open_basedir returns good.' );
+	$assert( 'good' === $health->testOnboardingHelper()['status'], 'An open_basedir-restricted helper is informational, not missing.' );
 	$assert( 'good' === $health->testDropDirectory()['status'], 'Healthy drop directory returns good.' );
 
 	$diagnostics->status['drop_directory_writable'] = false;
@@ -163,6 +188,9 @@ namespace {
 
 	$diagnostics->status['open_basedir_allows_drop'] = false;
 	$assert( 'critical' === $health->testOpenBasedir()['status'], 'Blocked open_basedir returns critical.' );
+
+	$diagnostics->status['onboarding_helper_state'] = 'missing';
+	$assert( 'recommended' === $health->testOnboardingHelper()['status'], 'A verifiably missing helper returns recommended.' );
 
 	if ( 0 !== $failed ) {
 		exit( 1 );

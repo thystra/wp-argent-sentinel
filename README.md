@@ -43,3 +43,12 @@ Version 0.2.3 uses the package-owned
 Site Health distinguish a missing spool from PHP-FPM `open_basedir` blocking
 access, show the effective and suggested values, and direct the operator back
 through the privileged helper.
+
+## Version 0.2.4 helper visibility
+
+Version 0.2.4 treats host-helper availability as tri-state. A helper can be
+available, verifiably missing, or unverifiable because PHP-FPM `open_basedir`
+intentionally excludes `/usr/sbin`. The latter is expected for a least-
+privilege web process: the copied command runs the helper as root, so the
+plugin no longer reports it as missing or recommends adding `/usr/sbin` to
+PHP's filesystem access.

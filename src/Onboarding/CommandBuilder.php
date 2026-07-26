@@ -5,6 +5,10 @@ namespace ArgentSentinel\WordPress\Onboarding;
 use ArgentSentinel\WordPress\Settings\Settings;
 
 final class CommandBuilder {
+	public const HELPER_AVAILABLE              = 'available';
+	public const HELPER_MISSING                = 'missing';
+	public const HELPER_UNVERIFIABLE_BASEDIR   = 'unverifiable_open_basedir';
+
 	/** @var Settings */
 	private $settings;
 
@@ -40,18 +44,27 @@ final class CommandBuilder {
 		}
 
 		foreach ( $this->candidatePaths() as $candidate ) {
-			if ( is_file( $candidate ) && is_executable( $candidate ) ) {
+			if ( self::HELPER_AVAILABLE === $this->pathState( $candidate ) ) {
 				return $candidate;
 			}
 		}
 
-		return '/usr/sbin/argent-sentinel-onboard-wordpress';
+		// The package-owned path remains the generated command even when the
+		// unprivileged PHP process cannot stat /usr/sbin through open_basedir.
+		return $this->candidatePaths()[0];
 	}
 
-	public function helperExists(): bool {
-		$path = $this->helperPath();
+	public function helperState( ?string $open_basedir = null ): string {
+		return $this->pathState( $this->helperPath(), $open_basedir );
+	}
 
-		return is_file( $path ) && is_executable( $path );
+	public function helperExists( ?string $open_basedir = null ): ?bool {
+		$state = $this->helperState( $open_basedir );
+		if ( self::HELPER_UNVERIFIABLE_BASEDIR === $state ) {
+			return null;
+		}
+
+		return self::HELPER_AVAILABLE === $state;
 	}
 
 	/**
@@ -75,5 +88,71 @@ final class CommandBuilder {
 		}
 
 		return '<php-fpm-user>';
+	}
+
+	private function pathState( string $path, ?string $open_basedir = null ): string {
+		$open_basedir = null === $open_basedir ? $this->effectiveOpenBasedir() : $open_basedir;
+		if (
+			'' !== trim( $open_basedir )
+			&& ! $this->openBasedirAllowsPath( $open_basedir, $path )
+		) {
+			return self::HELPER_UNVERIFIABLE_BASEDIR;
+		}
+
+		return @is_file( $path ) && @is_executable( $path )
+			? self::HELPER_AVAILABLE
+			: self::HELPER_MISSING;
+	}
+
+	private function effectiveOpenBasedir(): string {
+		$value = ini_get( 'open_basedir' );
+		$value = false === $value ? '' : (string) $value;
+
+		/**
+		 * Filters the effective open_basedir used for helper visibility.
+		 *
+		 * @param string $value Effective PHP open_basedir.
+		 */
+		return (string) apply_filters( 'argent_sentinel_effective_open_basedir', $value );
+	}
+
+	private function openBasedirAllowsPath( string $configured, string $required ): bool {
+		$required = $this->normalizePath( $required );
+		foreach ( explode( PATH_SEPARATOR, $configured ) as $entry ) {
+			$entry = trim( $entry );
+			if ( '' === $entry ) {
+				continue;
+			}
+			if ( '.' === $entry ) {
+				$current = getcwd();
+				$entry   = false === $current ? '' : $current;
+			}
+			$entry = $this->normalizePath( $entry );
+			if (
+				'' !== $entry
+				&& (
+					$required === $entry
+					|| 0 === strpos(
+						$required . DIRECTORY_SEPARATOR,
+						$entry . DIRECTORY_SEPARATOR
+					)
+				)
+			) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private function normalizePath( string $path ): string {
+		$path = str_replace( array( '/', '\\' ), DIRECTORY_SEPARATOR, trim( $path ) );
+		$path = preg_replace(
+			'#[' . preg_quote( DIRECTORY_SEPARATOR, '#' ) . ']+#',
+			DIRECTORY_SEPARATOR,
+			$path
+		);
+
+		return rtrim( (string) $path, DIRECTORY_SEPARATOR );
 	}
 }

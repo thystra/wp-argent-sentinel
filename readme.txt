@@ -3,7 +3,7 @@ Contributors: argent-sentinel
 Tags: security, spam, login, email verification, self hosted
 Requires at least: 6.5
 Requires PHP: 7.4
-Stable tag: 0.2.3
+Stable tag: 0.2.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,6 +43,11 @@ The connector stores IP addresses and bounded security metadata. It does not per
 Exported batches contain the same bounded event evidence as the queue. Protect the drop and archive directories as security records.
 
 == Changelog ==
+= 0.2.4 =
+* Treat host-helper availability as available, missing, or unverifiable through open_basedir.
+* Stop reporting `/usr/sbin` helpers missing solely because PHP-FPM cannot stat them.
+* Add accurate administrator and Site Health explanations without broadening PHP access.
+
 = 0.2.3 =
 * Use the packaged `/usr/sbin/argent-sentinel-onboard-wordpress` helper.
 * Prompt during onboarding when PHP-FPM open_basedir excludes the drop.
