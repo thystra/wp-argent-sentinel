@@ -34,3 +34,12 @@ The plugin also provides direct WordPress Site Health tests and a non-secret
 debug-information section. WordPress remains an unprivileged event producer:
 the host agent manages the protected spool, central collection, CrowdSec, and
 abuse reporting.
+
+## Version 0.2.3 onboarding hardening
+
+Version 0.2.3 uses the package-owned
+`/usr/sbin/argent-sentinel-onboard-wordpress` helper and includes
+`--open-basedir-mode prompt` in generated commands. The administrator page and
+Site Health distinguish a missing spool from PHP-FPM `open_basedir` blocking
+access, show the effective and suggested values, and direct the operator back
+through the privileged helper.

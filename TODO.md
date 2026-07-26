@@ -1,27 +1,16 @@
 # wp-argent-sentinel TODO
 
-## Completed in 0.2.2
+## Completed in 0.2.3
 
-- [x] Promote the staged 0.2.1 onboarding classes into the active plugin.
-- [x] Register `wp argent-sentinel setup`.
-- [x] Preserve `status`, `export`, and `prune`.
-- [x] Add `onboarding-command` with PHP-user and WordPress-path overrides.
-- [x] Add `status --strict` for automation.
-- [x] Add a Settings → Argent Sentinel setup and operational-status page.
-- [x] Add a nonce-protected manual export action.
-- [x] Add persistent administrator warnings when the connector needs attention.
-- [x] Add WordPress Site Health and debug-information integration.
-- [x] Show non-secret directory owner, group, mode, PHP process user, queue,
-  schema, schedule, and request-correlation status.
-- [x] Detect the packaged or development onboarding helper.
-- [x] Add dependency-free WP-CLI, onboarding, admin-page, and Site Health tests.
+- [x] Use the package-owned onboarding helper name.
+- [x] Generate host commands with interactive open_basedir review.
+- [x] Detect open_basedir before filesystem checks misreport a blocked path as missing.
+- [x] Show effective, required, and suggested open_basedir values.
+- [x] Add a dedicated Site Health open_basedir test.
+- [x] Add regression coverage for helper discovery and open_basedir health.
 
 ## Open
 
-- [ ] Complete Allaboard Acres onboarding after deploying 0.2.2.
-- [ ] Confirm the server package installs the onboarding helper at
-  `/usr/sbin/argent-sentinel-onboard-wordpress-site`.
-- [ ] Add a collector acknowledgement/receipt mechanism so WordPress can show
-  whether a published batch was collected, not only whether it was written.
-- [ ] Consider a multisite network-status screen if the plugin is network
-  activated.
+- [ ] Test 0.2.3 through a clean onboarding on another WordPress/FPM pool.
+- [ ] Add collector acknowledgement so WordPress can show whether a batch was collected.
+- [ ] Consider a multisite network-status screen if network activated.

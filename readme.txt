@@ -3,7 +3,7 @@ Contributors: argent-sentinel
 Tags: security, spam, login, email verification, self hosted
 Requires at least: 6.5
 Requires PHP: 7.4
-Stable tag: 0.2.2
+Stable tag: 0.2.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,6 +43,12 @@ The connector stores IP addresses and bounded security metadata. It does not per
 Exported batches contain the same bounded event evidence as the queue. Protect the drop and archive directories as security records.
 
 == Changelog ==
+= 0.2.3 =
+* Use the packaged `/usr/sbin/argent-sentinel-onboard-wordpress` helper.
+* Prompt during onboarding when PHP-FPM open_basedir excludes the drop.
+* Distinguish an open_basedir block from a missing drop directory.
+* Add open_basedir diagnostics to Settings and Site Health.
+
 
 = 0.2.2 =
 * Activate the option-backed `wp argent-sentinel setup` command.

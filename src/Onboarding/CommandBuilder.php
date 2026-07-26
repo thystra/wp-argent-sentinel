@@ -26,6 +26,7 @@ final class CommandBuilder {
 				'--site-id ' . escapeshellarg( $this->settings->siteId() ),
 				'--node-id ' . escapeshellarg( $this->settings->sourceHost() ),
 				'--php-user ' . escapeshellarg( $user ),
+				'--open-basedir-mode prompt',
 			)
 		);
 	}
@@ -44,7 +45,7 @@ final class CommandBuilder {
 			}
 		}
 
-		return '/usr/sbin/argent-sentinel-onboard-wordpress-site';
+		return '/usr/sbin/argent-sentinel-onboard-wordpress';
 	}
 
 	public function helperExists(): bool {
@@ -58,6 +59,7 @@ final class CommandBuilder {
 	 */
 	public function candidatePaths(): array {
 		return array(
+			'/usr/sbin/argent-sentinel-onboard-wordpress',
 			'/usr/sbin/argent-sentinel-onboard-wordpress-site',
 			'/usr/lib/argent-sentinel/scripts/onboard-wordpress-site.sh',
 			'/home/alan/src/argent-sentinel-collector/scripts/onboard-wordpress-site.sh',

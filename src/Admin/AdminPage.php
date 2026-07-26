@@ -252,15 +252,35 @@ final class AdminPage {
 					<p>
 						The host onboarding helper was not found at
 						<code><?php echo esc_html( (string) $status['onboarding_helper'] ); ?></code>.
-						Install the Argent Sentinel server tooling or define
+						Install the Argent Sentinel agent/server tooling or define
 						<code>ARGENT_SENTINEL_ONBOARDING_HELPER</code> with its absolute path.
 					</p>
 				</div>
 			<?php endif; ?>
+			<?php if ( ! empty( $status['open_basedir_enabled'] ) && empty( $status['open_basedir_allows_drop'] ) ) : ?>
+				<div class="notice notice-error inline">
+					<p><strong>PHP-FPM open_basedir blocks the configured drop directory.</strong></p>
+					<p>
+						Required entry:
+						<code><?php echo esc_html( (string) $status['open_basedir_required_entry'] ); ?></code>
+					</p>
+					<p>
+						Current effective value:
+						<code><?php echo esc_html( (string) $status['open_basedir'] ); ?></code>
+					</p>
+					<p>
+						Suggested value:
+						<code><?php echo esc_html( (string) $status['open_basedir_suggested_value'] ); ?></code>
+					</p>
+					<p>Rerun the host provisioning command, approve the prompted PHP-FPM change, and restart the matching pool.</p>
+				</div>
+			<?php endif; ?>
 			<p>
 				Run this as root on the WordPress host. It creates the protected spool,
-				configures these values through WP-CLI, checks status, and performs one export.
-				It does not expose the HMAC secret or edit <code>wp-config.php</code>.
+				checks the matching PHP-FPM pool, offers to append a missing
+				<code>open_basedir</code> entry, configures these values through WP-CLI,
+				checks status, and performs one export. It does not expose the HMAC
+				secret or edit <code>wp-config.php</code>.
 			</p>
 			<textarea class="large-text code" rows="7" readonly><?php echo esc_textarea( $command ); ?></textarea>
 
@@ -277,6 +297,11 @@ final class AdminPage {
 						'site_url'                        => 'Site URL',
 						'source_host'                     => 'Node ID',
 						'php_process_user'                => 'PHP process user',
+						'open_basedir'                    => 'Effective open_basedir',
+						'open_basedir_enabled'            => 'open_basedir enabled',
+						'open_basedir_allows_drop'        => 'open_basedir permits drop',
+						'open_basedir_required_entry'     => 'Required open_basedir entry',
+						'drop_directory_access_state'     => 'Drop access state',
 						'drop_directory'                  => 'Drop directory',
 						'drop_directory_exists'           => 'Directory exists',
 						'drop_directory_writable'         => 'Directory writable',

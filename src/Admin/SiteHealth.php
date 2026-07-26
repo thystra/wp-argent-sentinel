@@ -30,6 +30,10 @@ final class SiteHealth {
 			'label' => 'Argent Sentinel export directory',
 			'test'  => array( $this, 'testDropDirectory' ),
 		);
+		$tests['direct']['argent_sentinel_open_basedir'] = array(
+			'label' => 'Argent Sentinel PHP open_basedir',
+			'test'  => array( $this, 'testOpenBasedir' ),
+		);
 		$tests['direct']['argent_sentinel_export_schedule'] = array(
 			'label' => 'Argent Sentinel exporter schedule',
 			'test'  => array( $this, 'testSchedule' ),
@@ -97,6 +101,29 @@ final class SiteHealth {
 			'good',
 			'Argent Sentinel can write its protected local spool',
 			'The drop directory exists, is writable, is not a symlink, and is outside the WordPress document root.'
+		);
+	}
+
+	/**
+	 * @return array<string,mixed>
+	 */
+	public function testOpenBasedir(): array {
+		$status = $this->diagnostics->snapshot();
+		if (
+			! empty( $status['open_basedir_enabled'] )
+			&& empty( $status['open_basedir_allows_drop'] )
+		) {
+			return $this->result(
+				'critical',
+				'PHP open_basedir blocks Argent Sentinel',
+				'Append the protected drop directory to the matching PHP-FPM pool open_basedir value and restart the pool.'
+			);
+		}
+
+		return $this->result(
+			'good',
+			'PHP open_basedir permits Argent Sentinel',
+			'The effective PHP filesystem restriction permits the protected event drop directory.'
 		);
 	}
 
@@ -189,6 +216,8 @@ final class SiteHealth {
 				),
 				'drop_mode' => array( 'label' => 'Drop mode', 'value' => (string) ( $status['drop_directory_mode'] ?? 'unknown' ) ),
 				'php_process_user' => array( 'label' => 'PHP process user', 'value' => (string) $status['php_process_user'] ),
+				'open_basedir' => array( 'label' => 'Effective open_basedir', 'value' => (string) $status['open_basedir'] ),
+				'open_basedir_allows_drop' => array( 'label' => 'open_basedir permits drop', 'value' => ! empty( $status['open_basedir_allows_drop'] ) ? 'yes' : 'no' ),
 				'queued_count' => array( 'label' => 'Queued events', 'value' => (string) $status['queued_count'] ),
 				'last_exported_at' => array( 'label' => 'Last export UTC', 'value' => (string) ( $status['last_exported_at'] ?? 'none' ) ),
 				'next_export_at' => array( 'label' => 'Next export UTC', 'value' => (string) ( $status['next_export_at_utc'] ?? 'none' ) ),

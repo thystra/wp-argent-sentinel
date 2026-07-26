@@ -30,7 +30,7 @@ namespace {
 	function wp_parse_url( string $url, int $component = -1 ) { return parse_url( $url, $component ); }
 
 	define( 'ABSPATH', '/srv/example/public/' );
-	define( 'ARGENT_SENTINEL_ONBOARDING_HELPER', '/usr/sbin/argent-sentinel-onboard-wordpress-site' );
+	define( 'ARGENT_SENTINEL_ONBOARDING_HELPER', '/usr/sbin/argent-sentinel-onboard-wordpress' );
 
 	final class WP_CLI {
 		public static function add_command( string $name, $command ): void {
@@ -133,6 +133,8 @@ namespace {
 	$command_text = $builder->command( 'example-fpm', '/srv/example/public' );
 	$assert( false !== strpos( $command_text, '--site-id' ), 'Onboarding command contains site ID.' );
 	$assert( false !== strpos( $command_text, 'example-fpm' ), 'Onboarding command contains PHP user.' );
+	$assert( false !== strpos( $command_text, '--open-basedir-mode prompt' ), 'Onboarding command prompts for open_basedir review.' );
+	$assert( '/usr/sbin/argent-sentinel-onboard-wordpress' === $builder->candidatePaths()[0], 'Packaged onboarding helper is primary.' );
 	$assert( false === strpos( $command_text, 'argent_sentinel_hmac_secret' ), 'Onboarding command does not expose HMAC secret.' );
 
 	$command = new Command(

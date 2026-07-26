@@ -43,8 +43,8 @@ namespace ArgentSentinel\WordPress\Onboarding {
 		public function update( array $values ): array { return $values; }
 	}
 	final class CommandBuilder {
-		public function command(): string { return 'sudo /usr/sbin/argent-sentinel-onboard-wordpress-site --site-id wolfandraven-blog'; }
-		public function helperPath(): string { return '/usr/sbin/argent-sentinel-onboard-wordpress-site'; }
+		public function command(): string { return 'sudo /usr/sbin/argent-sentinel-onboard-wordpress --site-id wolfandraven-blog'; }
+		public function helperPath(): string { return '/usr/sbin/argent-sentinel-onboard-wordpress'; }
 		public function helperExists(): bool { return true; }
 	}
 }
@@ -57,7 +57,7 @@ namespace ArgentSentinel\WordPress\Diagnostics {
 			$this->status = array(
 				'overall_status' => 'ready',
 				'issues' => '',
-				'plugin_version' => '0.2.2',
+				'plugin_version' => '0.2.3',
 				'expected_schema_version' => 1,
 				'installed_schema_version' => 1,
 				'site_id' => 'wolfandraven-blog',
@@ -65,6 +65,12 @@ namespace ArgentSentinel\WordPress\Diagnostics {
 				'source_host' => 'nidhoggur',
 				'configuration_source' => 'WordPress options',
 				'php_process_user' => 'wolfandraven',
+				'open_basedir' => '/srv:/tmp:/var/lib/argent-sentinel/drop/wordpress/wolfandraven-blog/incoming',
+				'open_basedir_enabled' => true,
+				'open_basedir_allows_drop' => true,
+				'open_basedir_required_entry' => '/var/lib/argent-sentinel/drop/wordpress/wolfandraven-blog/incoming',
+				'open_basedir_suggested_value' => '/srv:/tmp:/var/lib/argent-sentinel/drop/wordpress/wolfandraven-blog/incoming',
+				'drop_directory_access_state' => 'ready',
 				'drop_directory' => '/var/lib/argent-sentinel/drop/wordpress/wolfandraven-blog/incoming',
 				'drop_directory_exists' => true,
 				'drop_directory_writable' => true,
@@ -77,7 +83,7 @@ namespace ArgentSentinel\WordPress\Diagnostics {
 				'request_id_available' => true,
 				'next_export_at_utc' => '2026-07-26T00:00:00+00:00',
 				'next_prune_at_utc' => '2026-07-26T01:00:00+00:00',
-				'onboarding_helper' => '/usr/sbin/argent-sentinel-onboard-wordpress-site',
+				'onboarding_helper' => '/usr/sbin/argent-sentinel-onboard-wordpress',
 				'onboarding_helper_exists' => true,
 				'queued_count' => 3,
 				'oldest_queued_at' => '2026-07-25 23:00:00',
@@ -148,10 +154,15 @@ namespace {
 	$tests = $health->tests( array( 'direct' => array() ) );
 	$assert( isset( $tests['direct']['argent_sentinel_configuration'] ), 'Configuration health test is available.' );
 	$assert( isset( $tests['direct']['argent_sentinel_drop_directory'] ), 'Drop-directory health test is available.' );
+	$assert( isset( $tests['direct']['argent_sentinel_open_basedir'] ), 'open_basedir health test is available.' );
+	$assert( 'good' === $health->testOpenBasedir()['status'], 'Allowed open_basedir returns good.' );
 	$assert( 'good' === $health->testDropDirectory()['status'], 'Healthy drop directory returns good.' );
 
 	$diagnostics->status['drop_directory_writable'] = false;
 	$assert( 'critical' === $health->testDropDirectory()['status'], 'Unwritable drop directory returns critical.' );
+
+	$diagnostics->status['open_basedir_allows_drop'] = false;
+	$assert( 'critical' === $health->testOpenBasedir()['status'], 'Blocked open_basedir returns critical.' );
 
 	if ( 0 !== $failed ) {
 		exit( 1 );
