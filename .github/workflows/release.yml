@@ -44,6 +44,8 @@ jobs:
         run: |
           php -d error_reporting=E_ALL -d display_errors=1 tests/run.php
           php -d error_reporting=E_ALL -d display_errors=1 tests/export-run.php
+          php -d error_reporting=E_ALL -d display_errors=1 tests/onboarding-run.php
+          php -d error_reporting=E_ALL -d display_errors=1 tests/admin-run.php
       - name: Check PHP syntax
         shell: bash
         run: |

@@ -12,11 +12,9 @@ final class Settings {
 
 	public static function installDefaults(): void {
 		$settings = new self();
-
 		if ( false === get_option( self::OPTION_NAME, false ) ) {
 			add_option( self::OPTION_NAME, $settings->defaults(), '', 'no' );
 		}
-
 		if ( false === get_option( self::HMAC_SECRET_OPTION, false ) ) {
 			try {
 				$secret = bin2hex( random_bytes( 32 ) );
@@ -28,6 +26,10 @@ final class Settings {
 				 */
 			}
 		}
+	}
+
+	public function refresh(): void {
+		$this->values = null;
 	}
 
 	public function siteId(): string {
@@ -64,7 +66,6 @@ final class Settings {
 		if ( ! is_array( $value ) ) {
 			return array();
 		}
-
 		return array_values(
 			array_filter(
 				array_map(
@@ -85,7 +86,6 @@ final class Settings {
 		}
 
 		$value = get_option( self::HMAC_SECRET_OPTION, '' );
-
 		return is_string( $value ) && strlen( $value ) >= self::MINIMUM_HMAC_SECRET_BYTES ? $value : '';
 	}
 
@@ -105,15 +105,14 @@ final class Settings {
 		if ( false === $host || '' === $host ) {
 			$host = 'wordpress-host';
 		}
-
 		return array(
-			'site_id'                => $site_id,
-			'source_host'            => self::normalizeIdentifier( $host, 'wordpress-host' ),
-			'drop_directory'         => '/var/lib/argent-sentinel/drop/wordpress/' . $site_id . '/incoming',
-			'trusted_proxy_cidrs'    => array(),
-			'max_events_per_batch'   => 500,
-			'max_batch_bytes'        => 5242880,
-			'local_retention_days'   => 30,
+			'site_id'                  => $site_id,
+			'source_host'              => self::normalizeIdentifier( $host, 'wordpress-host' ),
+			'drop_directory'           => '/var/lib/argent-sentinel/drop/wordpress/' . $site_id . '/incoming',
+			'trusted_proxy_cidrs'      => array(),
+			'max_events_per_batch'     => 500,
+			'max_batch_bytes'          => 5242880,
+			'local_retention_days'     => 30,
 			'delete_data_on_uninstall' => false,
 		);
 	}
@@ -126,7 +125,6 @@ final class Settings {
 			$stored       = get_option( self::OPTION_NAME, array() );
 			$stored       = is_array( $stored ) ? $stored : array();
 			$this->values = array_merge( $this->defaults(), $stored );
-
 			/**
 			 * Filters effective Argent Sentinel settings.
 			 *
@@ -143,7 +141,6 @@ final class Settings {
 		if ( ! defined( $name ) ) {
 			return null;
 		}
-
 		$value = constant( $name );
 
 		return is_string( $value ) && '' !== trim( $value ) ? trim( $value ) : null;

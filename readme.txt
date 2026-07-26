@@ -3,7 +3,7 @@ Contributors: argent-sentinel
 Tags: security, spam, login, email verification, self hosted
 Requires at least: 6.5
 Requires PHP: 7.4
-Stable tag: 0.2.1
+Stable tag: 0.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,10 +30,10 @@ See README.md and docs/export-batches.md for architecture, privacy, configuratio
 == Installation ==
 
 1. Upload the directory to `/wp-content/plugins/argent-sentinel-wordpress/`.
-2. Define a stable site ID, source host, HMAC secret, and absolute drop directory in wp-config.php.
-3. Create the drop directory outside the web root and make it writable only by the site's PHP-FPM user and the restricted Sentinel group.
-4. Activate Argent Sentinel WordPress Connector.
-5. Run `wp argent-sentinel status` and `wp argent-sentinel export --format=json`.
+2. Activate Argent Sentinel WordPress Connector.
+3. Open Settings → Argent Sentinel or run `wp argent-sentinel onboarding-command`.
+4. Run the generated privileged host command to create the protected drop directory and save option-backed setup values.
+5. Verify with `wp argent-sentinel status --strict --format=json` and `wp argent-sentinel export --format=json`.
 6. Install and validate the separate host collector before enabling enforcement.
 
 == Privacy ==
@@ -43,6 +43,13 @@ The connector stores IP addresses and bounded security metadata. It does not per
 Exported batches contain the same bounded event evidence as the queue. Protect the drop and archive directories as security records.
 
 == Changelog ==
+
+= 0.2.2 =
+* Activate the option-backed `wp argent-sentinel setup` command.
+* Add a complete Settings → Argent Sentinel setup and operational-status page.
+* Add manual export testing, persistent admin warnings, and Site Health tests.
+* Show non-secret spool permissions, PHP user, queue, schema, schedule, and request-correlation status.
+* Add strict CLI health checking and onboarding-helper discovery.
 
 = 0.2.0 =
 

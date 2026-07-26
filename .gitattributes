@@ -5,3 +5,7 @@
 /composer.json export-ignore
 /phpcs.xml.dist export-ignore
 /tests export-ignore
+/overlay export-ignore
+/apply-v0.2.1.sh export-ignore
+/tests-onboarding-run.php export-ignore
+/TODO.md export-ignore

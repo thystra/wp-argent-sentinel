@@ -19,7 +19,7 @@
         }
     },
     "scripts": {
-        "test": "php tests/run.php && php tests/export-run.php",
+        "test": "php tests/run.php && php tests/export-run.php && php tests/onboarding-run.php && php tests/admin-run.php",
         "lint:php": "phpcs"
     },
     "config": {
