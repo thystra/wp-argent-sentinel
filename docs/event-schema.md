@@ -47,6 +47,12 @@ Event names are centralized in `Events\EventType`. Phase 1 emits:
 - `login_failed`
 - `login_unknown_account`
 
+Since 0.2.6 the connector also queues `registration_abuse`, which is produced
+by ArgentWolf Access Guard through the in-process handoff described in
+`docs/access-guard-handoff.md`. Its outcome is `denied` or `observed`; the
+Access Guard score, confidence, rule IDs, producer schema, and policy outcome
+are metadata.
+
 Constants already reserve the verification, cleanup, suspicious-registration,
 and batch audit names from the project brief so later phases do not scatter
 string literals.

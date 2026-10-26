@@ -4,7 +4,7 @@ namespace ArgentSentinel\WordPress\Events;
 
 use ArgentSentinel\WordPress\Database\Schema;
 
-final class QueueRepository {
+final class QueueRepository implements EventQueue {
 
 	/**
 	 * Explicit formats prevent collisions with WordPress's global wpdb field map.
@@ -67,6 +67,19 @@ final class QueueRepository {
 
 		$result = $this->wpdb->insert( $this->table_name, $row, $formats );
 		return false !== $result;
+	}
+
+	/**
+	 * Reports whether an event UUID is already present in the local queue.
+	 */
+	public function hasEvent( string $event_uuid ): bool {
+		$sql   = $this->wpdb->prepare(
+			"SELECT 1 FROM {$this->table_name} WHERE event_uuid = %s LIMIT 1",
+			strtolower( $event_uuid )
+		);
+		$value = $this->wpdb->get_var( $sql );
+
+		return null !== $value && '' !== (string) $value;
 	}
 
 	/**

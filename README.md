@@ -60,3 +60,16 @@ hardening issue for the expected per-user PHP-FPM pool model. The connector
 continues to show filesystem and export health separately, but its overall
 status becomes Needs attention and Site Health returns a recommended action.
 The page labels an empty value as `disabled`, not `unknown`.
+
+## Version 0.2.6 Access Guard handoff
+
+Version 0.2.6 implements the ArgentWolf Access Guard connector handoff. The
+connector registers `argentwolf_access_guard_sentinel_external_event_v1`
+(`$result`, `$event`, `$producer`; first wins) and queues the normalized
+`registration_abuse` event in its normal durable queue, returning
+`accepted` with reference `queue:<event_uuid>`, or `rejected`/`error`. It also
+answers `argentwolf_access_guard_sentinel_context_v1` with its effective
+`site_id`, `source_host`, and `drop_directory`, so Access Guard does not
+duplicate Sentinel configuration. Bridge enablement stays per site in Access
+Guard; the connector has no site allowlist. See
+`docs/access-guard-handoff.md`.

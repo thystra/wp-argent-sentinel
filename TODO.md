@@ -1,5 +1,12 @@
 # wp-argent-sentinel TODO
 
+## Completed in 0.2.6
+
+- [x] Register `argentwolf_access_guard_sentinel_external_event_v1` (first-wins) and queue Access Guard `registration_abuse` events.
+- [x] Return accepted/rejected/error acknowledgements with `queue:<event_uuid>` references; idempotent on producer retry.
+- [x] Publish connector context through `argentwolf_access_guard_sentinel_context_v1`.
+- [x] Add `EventType::REGISTRATION_ABUSE` and dependency-free handoff tests.
+
 ## Completed in 0.2.5
 
 - [x] Flag disabled open_basedir as a security-hardening issue.
@@ -11,6 +18,8 @@
 - [x] Add web UI and Site Health regression coverage.
 
 ## Open
+
+- [ ] Test 0.2.6 with Access Guard in `auto` mode on a test site before enabling on a live site.
 
 - [ ] Audit and repair the earlier per-user PHP pool creation workflow.
 - [ ] Test 0.2.5 by web-uploading the ZIP to an unrestricted test pool.

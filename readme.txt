@@ -3,7 +3,7 @@ Contributors: argent-sentinel
 Tags: security, spam, login, email verification, self hosted
 Requires at least: 6.5
 Requires PHP: 7.4
-Stable tag: 0.2.5
+Stable tag: 0.2.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,8 +18,9 @@ Version 0.2.0 adds bounded, deterministic JSON batch export to a local host drop
 The connector currently records:
 
 * comments marked as spam;
-* failed logins for known accounts; and
-* login attempts for nonexistent accounts ("ghost logins").
+* failed logins for known accounts;
+* login attempts for nonexistent accounts ("ghost logins"); and
+* ArgentWolf Access Guard `registration_abuse` events handed off in-process (0.2.6).
 
 It does not run cscli, change nftables, invoke Fail2ban, write under WordPress uploads, call a commercial validation service, or directly create firewall decisions.
 
@@ -43,6 +44,11 @@ The connector stores IP addresses and bounded security metadata. It does not per
 Exported batches contain the same bounded event evidence as the queue. Protect the drop and archive directories as security records.
 
 == Changelog ==
+= 0.2.6 =
+* Implement the ArgentWolf Access Guard `argentwolf_access_guard_sentinel_external_event_v1` handoff: queue normalized `registration_abuse` events in the durable queue and acknowledge with `queue:<event_uuid>` (first-wins, idempotent on retry).
+* Answer `argentwolf_access_guard_sentinel_context_v1` with the connector Site ID, source host, and drop directory.
+* Add `EventType::REGISTRATION_ABUSE`. The connector stays site-agnostic; Access Guard owns per-site enablement.
+
 = 0.2.5 =
 * Flag disabled PHP open_basedir as a per-site pool security-hardening issue.
 * Show Needs attention and a Site Health recommendation for unrestricted pools.

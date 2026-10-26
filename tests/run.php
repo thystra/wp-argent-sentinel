@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 $GLOBALS['argent_test_options']     = array();
 $GLOBALS['argent_test_dbdelta_sql'] = array();
 $GLOBALS['argent_test_actions']     = array();
+$GLOBALS['argent_test_filters']     = array();
 $GLOBALS['argent_test_failed_option_writes'] = array();
 
 if ( ! function_exists( 'dbDelta' ) ) {
@@ -117,6 +118,22 @@ if ( ! function_exists( 'add_action' ) ) {
 	 */
 	function add_action( string $hook_name, $callback, int $priority = 10, int $accepted_arguments = 1 ): bool {
 		$GLOBALS['argent_test_actions'][] = array(
+			'hook_name'          => $hook_name,
+			'callback'           => $callback,
+			'priority'           => $priority,
+			'accepted_arguments' => $accepted_arguments,
+		);
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'add_filter' ) ) {
+	/**
+	 * @param callable $callback Hook callback.
+	 */
+	function add_filter( string $hook_name, $callback, int $priority = 10, int $accepted_arguments = 1 ): bool {
+		$GLOBALS['argent_test_filters'][] = array(
 			'hook_name'          => $hook_name,
 			'callback'           => $callback,
 			'priority'           => $priority,
@@ -1186,6 +1203,24 @@ try {
 		2,
 		$registered_hooks['wp_login_failed']['accepted_arguments'],
 		'Failed-login capture receives both the submitted identifier and WP_Error.'
+	);
+
+	$registered_filters = array();
+	foreach ( $GLOBALS['argent_test_filters'] as $registered_filter ) {
+		$registered_filters[ $registered_filter['hook_name'] ] = $registered_filter;
+	}
+	$suite->same(
+		3,
+		$registered_filters['argentwolf_access_guard_sentinel_external_event_v1']['accepted_arguments'] ?? null,
+		'The composition root registers the Access Guard external-event handoff with three arguments.'
+	);
+	$suite->assert(
+		isset( $registered_filters['argentwolf_access_guard_sentinel_context_v1'] ),
+		'The composition root registers Access Guard connector context discovery.'
+	);
+	$suite->assert(
+		! ( new QueueRepository( $wpdb ) )->hasEvent( '6f0c1d6e-2b0b-4c84-9a59-0c5f2b0e4d11' ),
+		'Queue duplicate lookup reports absent events as missing.'
 	);
 
 	fwrite( STDOUT, "All {$suite->assertions()} assertions passed.\n" );

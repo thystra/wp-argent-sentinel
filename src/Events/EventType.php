@@ -20,6 +20,7 @@ final class EventType {
 	public const UNVERIFIED_USER_DELETED             = 'unverified_user_deleted';
 	public const UNVERIFIED_CLEANUP_FAILED           = 'unverified_cleanup_failed';
 	public const REGISTRATION_MARKED_SUSPICIOUS      = 'registration_marked_suspicious';
+	public const REGISTRATION_ABUSE                  = 'registration_abuse';
 	public const EXPORT_BATCH_CREATED                = 'export_batch_created';
 	public const EXPORT_BATCH_FAILED                 = 'export_batch_failed';
 

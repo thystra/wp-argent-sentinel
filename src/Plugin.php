@@ -15,19 +15,23 @@ use ArgentSentinel\WordPress\Export\CronExporter;
 use ArgentSentinel\WordPress\Export\ExportLock;
 use ArgentSentinel\WordPress\Export\ExportSettings;
 use ArgentSentinel\WordPress\Http\RequestContextFactory;
+use ArgentSentinel\WordPress\Integrations\AccessGuardHandoff;
 use ArgentSentinel\WordPress\Network\ClientIpResolver;
 use ArgentSentinel\WordPress\Onboarding\CommandBuilder;
 use ArgentSentinel\WordPress\Privacy\EmailIdentity;
 use ArgentSentinel\WordPress\Settings\Settings;
 
 final class Plugin {
-	public const VERSION = '0.2.5';
+	public const VERSION = '0.2.6';
 
 	/** @var self|null */
 	private static $instance;
 
 	/** @var AbuseEventSubscriber */
 	private $abuse_events;
+
+	/** @var AccessGuardHandoff */
+	private $access_guard_handoff;
 
 	/** @var CronExporter */
 	private $cron_exporter;
@@ -40,11 +44,13 @@ final class Plugin {
 
 	private function __construct(
 		AbuseEventSubscriber $abuse_events,
+		AccessGuardHandoff $access_guard_handoff,
 		CronExporter $cron_exporter,
 		AdminPage $admin_page,
 		SiteHealth $site_health
 	) {
 		$this->abuse_events = $abuse_events;
+		$this->access_guard_handoff = $access_guard_handoff;
 		$this->cron_exporter = $cron_exporter;
 		$this->admin_page = $admin_page;
 		$this->site_health = $site_health;
@@ -79,6 +85,14 @@ final class Plugin {
 				new WordPressAccountLookup(),
 				$email_identity
 			);
+			$access_guard_handoff = new AccessGuardHandoff(
+				$queue,
+				$settings->siteId(),
+				$settings->siteUrl(),
+				$settings->sourceHost(),
+				$settings->dropDirectory(),
+				self::VERSION
+			);
 			$exporter = new BatchExporter(
 				$queue,
 				new ExportSettings( $settings ),
@@ -93,8 +107,9 @@ final class Plugin {
 			$admin_page      = new AdminPage( $settings, $diagnostics, $command_builder, $exporter );
 			$site_health     = new SiteHealth( $diagnostics );
 
-			self::$instance = new self( $abuse_events, $cron, $admin_page, $site_health );
+			self::$instance = new self( $abuse_events, $access_guard_handoff, $cron, $admin_page, $site_health );
 			self::$instance->abuse_events->register();
+			self::$instance->access_guard_handoff->register();
 			self::$instance->cron_exporter->register();
 			self::$instance->admin_page->register();
 			self::$instance->site_health->register();
