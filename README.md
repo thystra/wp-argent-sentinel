@@ -73,3 +73,29 @@ answers `argentwolf_access_guard_sentinel_context_v1` with its effective
 duplicate Sentinel configuration. Bridge enablement stays per site in Access
 Guard; the connector has no site allowlist. See
 `docs/access-guard-handoff.md`.
+
+## CI and releases (Forgejo)
+
+Forgejo (`forgejo.argentwolf.org/alan/wp-plugin-argent-sentinel`) is the
+canonical repository and release host.
+
+- `.forgejo/workflows/ci.yml` runs on pushes to `main`, pull requests, and
+  manual dispatch. On PHP 7.4 and 8.5 it runs `scripts/ci-check.sh`: `php -l`
+  on every plugin PHP file, all five dependency-free test runners
+  (`tests/run.php`, `export-run.php`, `onboarding-run.php`, `admin-run.php`,
+  and `access-guard-handoff-run.php`), and `git diff --check`. A build-only job
+  then produces the installable ZIP with `scripts/build-release.sh`.
+- `.forgejo/workflows/release.yml` publishes a release when a `vX.Y.Z` tag is
+  pushed to Forgejo. The tag must match the plugin header `Version`,
+  `readme.txt` `Stable tag`, and `Plugin::VERSION`. The workflow reruns the
+  test matrix, builds `argent-sentinel-wordpress-X.Y.Z.zip` with `git archive`
+  (development files are excluded via `.gitattributes` and a leak check), and
+  creates a Forgejo release with the ZIP and its `.sha256`. Manual dispatch is
+  a dry run that only uploads the ZIP as a workflow artifact.
+- To cut a release after the version bump is merged:
+  `git tag -s vX.Y.Z && git push forgejo vX.Y.Z`.
+- `.github/workflows/release.yml` is a legacy mirror kept in step with the
+  same tests; it is not the release path.
+
+Run the same checks locally with `bash scripts/ci-check.sh` and
+`bash scripts/build-release.sh`.

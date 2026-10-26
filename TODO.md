@@ -19,6 +19,7 @@
 
 ## Open
 
+- [ ] Cut the first Forgejo-native release (`v0.2.6` tag on Forgejo) once the Forgejo release workflow is merged; confirm the automatic token can publish or add a `FORGEJO_RELEASE_TOKEN` secret.
 - [ ] Test 0.2.6 with Access Guard in `auto` mode on a test site before enabling on a live site.
 
 - [ ] Audit and repair the earlier per-user PHP pool creation workflow.

@@ -1,0 +1,87 @@
+# .forgejo/workflows/ci.yml
+# Argent Sentinel WordPress Connector validation: PHP syntax, all five
+# dependency-free test runners (including the Access Guard handoff), the
+# whitespace gate, and a build-only installable ZIP check. Nothing is
+# installed or deployed, and no composer/phpcs dependencies are required.
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    name: PHP ${{ matrix.php }} lint and tests
+    runs-on: forgejo-workstation
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        php:
+          # 7.4 is the plugin's declared minimum (Requires PHP: 7.4);
+          # 8.5 is the newest supported runtime.
+          - '7.4'
+          - '8.5'
+
+    steps:
+      - name: Check out repository
+        uses: https://data.forgejo.org/actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # checkout v5, Node 24
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+
+      - name: Set up PHP
+        uses: https://github.com/shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: none
+
+      - name: Trust workspace for git
+        run: git config --global --add safe.directory "$PWD"
+
+      - name: Lint, tests, and whitespace gate
+        run: bash scripts/ci-check.sh
+
+  package:
+    name: Installable ZIP (build only)
+    runs-on: forgejo-workstation
+    timeout-minutes: 10
+    needs:
+      - source
+
+    steps:
+      - name: Check out repository
+        uses: https://data.forgejo.org/actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # checkout v5, Node 24
+        with:
+          persist-credentials: false
+
+      - name: Ensure packaging tools
+        run: |
+          set -euo pipefail
+          if ! command -v unzip >/dev/null; then
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends unzip
+            rm -rf /var/lib/apt/lists/*
+          fi
+          git config --global --add safe.directory "$PWD"
+
+      - name: Build and verify installable ZIP
+        run: bash scripts/build-release.sh --out dist
+
+      - name: Upload CI package
+        uses: https://code.forgejo.org/actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5
+        with:
+          name: argent-sentinel-wordpress-ci-${{ forgejo.sha }}
+          path: |
+            dist/*.zip
+            dist/*.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
+# EOF .forgejo/workflows/ci.yml

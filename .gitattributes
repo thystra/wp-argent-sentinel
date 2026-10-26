@@ -9,3 +9,5 @@
 /apply-v0.2.1.sh export-ignore
 /tests-onboarding-run.php export-ignore
 /TODO.md export-ignore
+/.forgejo export-ignore
+/scripts export-ignore
