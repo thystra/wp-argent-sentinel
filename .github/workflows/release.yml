@@ -1,3 +1,7 @@
+# Legacy GitHub mirror release workflow.
+# Forgejo is canonical: the working release path is .forgejo/workflows/release.yml
+# (tag vX.Y.Z on forgejo.argentwolf.org). This file is kept only so a tag pushed
+# to the GitHub mirror still builds an equivalent, fully tested ZIP.
 name: Build plugin release
 
 on:
@@ -46,6 +50,7 @@ jobs:
           php -d error_reporting=E_ALL -d display_errors=1 tests/export-run.php
           php -d error_reporting=E_ALL -d display_errors=1 tests/onboarding-run.php
           php -d error_reporting=E_ALL -d display_errors=1 tests/admin-run.php
+          php -d error_reporting=E_ALL -d display_errors=1 tests/access-guard-handoff-run.php
       - name: Check PHP syntax
         shell: bash
         run: |
@@ -141,7 +146,7 @@ jobs:
             grep -qx "${PLUGIN_SLUG}/argent-sentinel-wordpress.php"
 
           if unzip -Z1 "${archive}" |
-            grep -Eq "^${PLUGIN_SLUG}/(\.github/|build/|tests/|vendor/|composer\.json$|phpcs\.xml\.dist$)"; then
+            grep -Eq "^${PLUGIN_SLUG}/(\.github/|\.forgejo/|scripts/|build/|tests/|vendor/|composer\.json$|phpcs\.xml\.dist$)"; then
             echo "Development-only files leaked into ${archive}." >&2
             exit 1
           fi

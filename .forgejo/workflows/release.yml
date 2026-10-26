@@ -1,0 +1,169 @@
+# .forgejo/workflows/release.yml
+# Canonical release path for the Argent Sentinel WordPress Connector.
+#
+# - Pushing a tag vX.Y.Z runs the full test matrix, validates that the tag
+#   matches the plugin header Version, readme.txt Stable tag, and
+#   Plugin::VERSION, builds argent-sentinel-wordpress-X.Y.Z.zip with
+#   git archive, and publishes a Forgejo release with the ZIP and .sha256.
+# - workflow_dispatch is a dry run: same tests and build, artifact only,
+#   nothing is published and no tag is created.
+#
+# Publishing uses the Forgejo REST API with the automatic job token, or the
+# FORGEJO_RELEASE_TOKEN repository secret when set. It never replaces an
+# existing release.
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ forgejo.ref }}
+  cancel-in-progress: false
+
+env:
+  PLUGIN_SLUG: argent-sentinel-wordpress
+
+jobs:
+  test:
+    name: PHP ${{ matrix.php }} release tests
+    runs-on: forgejo-workstation
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        php:
+          - '7.4'
+          - '8.5'
+
+    steps:
+      - name: Check out release source
+        uses: https://data.forgejo.org/actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # checkout v5, Node 24
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+
+      - name: Set up PHP
+        uses: https://github.com/shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: none
+
+      - name: Trust workspace for git
+        run: git config --global --add safe.directory "$PWD"
+
+      # Includes tests/access-guard-handoff-run.php (0.2.6 handoff).
+      - name: Lint, all five test runners, and whitespace gate
+        run: bash scripts/ci-check.sh
+
+  release:
+    name: Build and publish Forgejo release
+    needs:
+      - test
+    runs-on: forgejo-workstation
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      RELEASE_TOKEN: ${{ secrets.FORGEJO_RELEASE_TOKEN || forgejo.token }}
+      PUBLISH: ${{ forgejo.event_name == 'push' && startsWith(forgejo.ref, 'refs/tags/v') }}
+
+    steps:
+      - name: Check out release source
+        uses: https://data.forgejo.org/actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # checkout v5, Node 24
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Ensure packaging tools
+        run: |
+          set -euo pipefail
+          missing=()
+          for tool in unzip curl jq; do
+            command -v "$tool" >/dev/null || missing+=("$tool")
+          done
+          if ((${#missing[@]})); then
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates "${missing[@]}"
+            rm -rf /var/lib/apt/lists/*
+          fi
+          git config --global --add safe.directory "$PWD"
+
+      - name: Validate version and build installable ZIP
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${PUBLISH}" == 'true' ]]; then
+            bash scripts/build-release.sh --tag "${FORGEJO_REF_NAME}" --out dist | tee build.out
+          else
+            echo 'workflow_dispatch dry run: building from the selected ref, nothing will be published.'
+            bash scripts/build-release.sh --out dist | tee build.out
+          fi
+          version="$(sed -n 's/^version=//p' build.out)"
+          echo "version=${version}" >> "${FORGEJO_OUTPUT}"
+          echo "tag=v${version}" >> "${FORGEJO_OUTPUT}"
+
+      - name: Upload release assets as workflow artifact
+        uses: https://code.forgejo.org/actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-${{ steps.package.outputs.version }}
+          path: |
+            dist/*.zip
+            dist/*.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish Forgejo release
+        if: env.PUBLISH == 'true'
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          set -euo pipefail
+          api="${FORGEJO_SERVER_URL%/}/api/v1/repos/${FORGEJO_REPOSITORY}"
+          auth=(-H "Authorization: token ${RELEASE_TOKEN}")
+          archive="dist/${PLUGIN_SLUG}-${RELEASE_VERSION}.zip"
+          checksum="${archive}.sha256"
+
+          (cd dist && sha256sum --check "$(basename "${checksum}")")
+
+          status="$(curl -sS -o /dev/null -w '%{http_code}' "${auth[@]}" "${api}/releases/tags/${RELEASE_TAG}")"
+          if [[ "${status}" == '200' ]]; then
+            echo "Release ${RELEASE_TAG} already exists; refusing to replace published assets." >&2
+            exit 1
+          fi
+
+          sha="$(cut -d' ' -f1 "${checksum}")"
+          body="$(printf 'Argent Sentinel WordPress Connector %s\n\nInstall `%s` via Plugins > Add New > Upload Plugin.\n\nSHA-256: `%s`\n\nCommit: %s\n' \
+            "${RELEASE_TAG}" "$(basename "${archive}")" "${sha}" "${FORGEJO_SHA}")"
+          payload="$(jq -n \
+            --arg tag "${RELEASE_TAG}" \
+            --arg name "Argent Sentinel WordPress Connector ${RELEASE_TAG}" \
+            --arg body "${body}" \
+            '{tag_name: $tag, name: $name, body: $body, draft: true, prerelease: false}')"
+
+          # Create as a draft, attach assets, then publish, so a failed upload
+          # never leaves a public release without its ZIP.
+          release_id="$(curl -sS --fail-with-body "${auth[@]}" \
+            -H 'Content-Type: application/json' \
+            -d "${payload}" "${api}/releases" | jq -er '.id')"
+
+          for file in "${archive}" "${checksum}"; do
+            name="$(basename "${file}")"
+            curl -sS --fail-with-body "${auth[@]}" \
+              -F "attachment=@${file}" \
+              "${api}/releases/${release_id}/assets?name=${name}" | jq -r '.browser_download_url'
+          done
+
+          curl -sS --fail-with-body "${auth[@]}" -X PATCH \
+            -H 'Content-Type: application/json' \
+            -d '{"draft": false}' "${api}/releases/${release_id}" | jq -r '.html_url'
+# EOF .forgejo/workflows/release.yml
